@@ -17,9 +17,12 @@ Node01State* node01State = new Node01State();
 Node02State* node02State = new Node02State();
 
 AWS_IOT aws;
-
+void onReceive(int packetSize);
+void onReceiveMqtt (char *topicName, int payloadLen, char *payLoad);
 char WIFI_SSID[] = "Temp1";
 char WIFI_PASSWORD[] = "qwertyuiop";
+//char WIFI_SSID[] = "Yen Huong";
+//char WIFI_PASSWORD[] = "yenhuong1954";
 char HOST_ADDRESS[] = "a2184o3gtkvd1o-ats.iot.ap-southeast-1.amazonaws.com";
 char CLIENT_ID[] = "sol-farm";
 char TOPIC_NAME[] = "sol-farm/control";
@@ -43,8 +46,6 @@ void setup() {
   }
   Serial.println("Complete setup lora");
 
-  LoRa.onReceive(onReceive);
-  LoRa.receive();
 
   while (status != WL_CONNECTED)
   {
@@ -82,8 +83,10 @@ void setup() {
 
   publish_data_thread.onRun(sendMqttMessage);
   publish_data_thread.setInterval(2000);
-
   controller.add(&publish_data_thread);
+  LoRa.onReceive(onReceive);
+  LoRa.receive();
+
 }
 
 void loop() {
@@ -92,53 +95,91 @@ void loop() {
 
 void onReceive(int packetSize) {
   //Lora callback function
-  String loraBuffer = "";
-  for (int i = 0; i < packetSize; i++) {
-    loraBuffer += (char)LoRa.read();
+  char msgToSave[packetSize + 1];
+  char messageLora[packetSize + 1];
+  for (int i = 0; i < packetSize; i++)
+  {
+    messageLora[i] = (char)LoRa.read();
+    msgToSave[i] = messageLora[i];
   }
-  //Serial.println("Having new Lora data");
-  node01State->updateState(loraBuffer);
-  //node02State->updateState(loraBuffer);
+  messageLora[packetSize] = '\0';
+  msgToSave[packetSize] = '\0';
+  Serial.println(messageLora);
+  parseJSONRecived(messageLora);
+  //  node02State->updateState(messageLora,);
+  //  node01State->updateState(messageLora);
 }
 
+void parseJSONRecived(char* messageLora) {
+  DynamicJsonBuffer jb;
+  JsonObject& doc  = jb.parseObject(messageLora);
+  if (doc.success()) {
+    if (doc.containsKey("nodeID")) {
+      String id = doc["nodeID"].as<String>();
+
+      if (id == "node01") {
+        Serial.println("processs 1");
+        node01State->setTempSHT21(doc["tempSHT21"].as<float>());
+        node01State->setHumSHT21(doc["humSHT21"].as<float>());
+        node01State->setDs18b20(doc["ds18b20"].as<float>());
+        //        node01State->buffString = messageLora;
+        Serial.println(doc["tempSHT21"].as<float>());
+        Serial.println(doc["humSHT21"].as<float>());
+        Serial.println(doc["ds18b20"].as<float>());
+      }
+      if (id == "node02") {
+        Serial.println("processs 2");
+        node02State->setTempSHT21(doc["tempSHT21"].as<float>());
+        node02State->setHumSHT21(doc["humSHT21"].as<float>());
+        node02State->setDacValue(doc["ds18b20"].as<int>());
+        Serial.println(doc["tempSHT21"].as<float>());
+        Serial.println(doc["humSHT21"].as<float>());
+        Serial.println(doc["dacValue"].as<int>());
+      }
+    }
+  } else Serial.println("Parse JSON false");
+}
 
 void onReceiveMqtt (char *topicName, int payloadLen, char *payLoad)
 {
-  Serial.println(payLoad);
+  // Code nhan dieu khien tu mqtt
+  char message[payloadLen + 1];
+  for (int i = 0; i < payloadLen; i++) {
+    message[i] = (char)payLoad[i];
+  }
+  message[payloadLen] = '\0';
+  Serial.println(message);
+  DynamicJsonBuffer jb;
+  JsonObject& doc  = jb.parseObject(message);
+  if (doc.success()) {
+    if (doc.containsKey("message")) {
+      Serial.println("Đã parse thành công");
+    }
+  } else Serial.println("Parse JSON false");
+
 }
 
 void sendMqttMessage () {
-  String node01Buffer = node01State->getState();
-  String node02Buffer = node02State->getState();
-  String localBuffer = localState->getState();
-  //Serial.println(localBuffer);
-  //Serial.println(node01Buffer);
-  //Serial.println(node02Buffer);
-
-  StaticJsonBuffer<128> jb;
-  JsonObject& obj = jb.createObject();
-
-  String s = "";
+  //char arrToSend[3] = {node01State->getState(), node02State->getState(), localState->getState()};
+  //========= NODE 1
+  String msgSend[3] = {node01State->getState(), node02State->getState(), localState->getState()};
+  for (int i = 0; i < 3; i++) {
+    converToSend(msgSend[i]);
+  }
+  //=========
+}
+void converToSend(String msgSend) {
   char msg[128];
-  obj["temp"] = random(40);
-  obj["hum"] = random(100);
-  obj["sensor_id"] = "sensor01";
-
-  obj.printTo(s);
-  s.toCharArray(msg, 128);
-
+  msgSend.toCharArray(msg, 128);
   if (aws.publish("sol-farm/feedback", msg) == 0)
   {
-    Serial.print("Published Message");
+    Serial.println("Published Message");
   }
   else
   {
     Serial.println("Publish failed");
   }
-  //obj.printTo(Serial);
-  Serial.println("");
 }
-
 void sendDataLora(String anything) {
   while (LoRa.beginPacket() == 0) {
     Serial.print("waiting for radio ready... ");
@@ -148,4 +189,5 @@ void sendDataLora(String anything) {
   LoRa.beginPacket();
   LoRa.print(anything);
   LoRa.endPacket(true); //true is async mode
+
 }

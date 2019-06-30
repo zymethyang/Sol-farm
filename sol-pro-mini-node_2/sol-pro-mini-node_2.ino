@@ -50,19 +50,20 @@ void syncData() {
 void getSHT21() {
   //localState->setTempSHT21(sht.getTemperature());
   //localState->setHumSHT21(sht.getHumidity());
-  float tempSHT21 = float(random(28, 30));
-  float humSHT21 = float(random(60, 80));
+  float tempSHT21 = random(100,2000)/100.0;
+  float humSHT21 = random(100,2000)/100.0;
   localState->setTempSHT21(tempSHT21);
   localState->setHumSHT21(humSHT21);
 }
 
 void onReceive(int packetSize) {
-  String loraBuffer = "";
+  char messageLora[packetSize + 1];
   for (int i = 0; i < packetSize; i++) {
-    loraBuffer += (char)LoRa.read();
+    messageLora[i] = (char)LoRa.read();
   }
-  node01State->updateState(loraBuffer);
-  localState->updateState(loraBuffer);
+  messageLora[packetSize] = '\0';
+  node01State->updateState(messageLora);
+  localState->updateState(messageLora);
 }
 
 void sendData(String anything) {

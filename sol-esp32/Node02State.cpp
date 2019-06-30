@@ -8,7 +8,9 @@ class Node02State {
     int dacValue = 0;
     String nodeID = "node02";
 
+
   public:
+    String buffString;
     void setTempSHT21(float tempSHT21) {
       this->tempSHT21 = tempSHT21;
     }
@@ -23,7 +25,7 @@ class Node02State {
       return this->humSHT21;
     }
 
-    void setDacValue(float dacValue) {
+    void setDacValue(int dacValue) {
       this->dacValue = dacValue;
     }
     float getDacValue() {
@@ -31,27 +33,43 @@ class Node02State {
     }
 
     String getState() {
-      StaticJsonBuffer<128> jb;
+      DynamicJsonBuffer jb;
       JsonObject& doc = jb.createObject();
       String s = "";
       doc["tempSHT21"] = this->tempSHT21;
       doc["humSHT21"] =  this->humSHT21;
       doc["dacValue"] = this->dacValue;
       doc["nodeID"] = this->nodeID;
-      //doc.printTo(s);
+      doc.printTo(s);
       return s;
     }
 
-    void updateState(String loraBuffer) {
+    void updateState(char* loraBuffer) {
       //Lỗi không parse được
-      StaticJsonBuffer<256> jb;
+      //DynamicJsonBuffer jb;
+      StaticJsonBuffer<128> jb;
       JsonObject& doc  = jb.parseObject(loraBuffer);
+
       if (doc.containsKey("nodeID")) {
-        if (doc["nodeID"] == "node02") {
-          this->tempSHT21 = doc["tempSHT21"];
-          this->humSHT21 = doc["humSHT21"];
-          this->dacValue = doc["dacValue"];
+        String nodeid = doc["nodeID"].as<String>();
+        Serial.println(nodeid);
+        if (nodeid == "node02") {
+          //doc.printTo(buffString);
+          //          this->tempSHT21 = doc["tempSHT21"].as<float>();
+          //          this->humSHT21 = doc["humSHT21"].as<float>();
+          //          this->dacValue = doc["dacValue"].as<int>();
+          //strncpy(buffString, loraBuffer, strlen(loraBuffer));
+          //Serial.println(buffString);
+          Serial.println("Update node2 OK");
+
+          //Serial.println(getState());
         }
       }
+    }
+    void setBuffString(String buff) {
+      buffString = buff;
+    }
+    String getBuffString() {
+      return buffString;
     }
 };

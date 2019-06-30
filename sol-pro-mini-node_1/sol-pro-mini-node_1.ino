@@ -62,13 +62,13 @@ void sendData(String anything) {
 void getSHT21() {
   //localState->setTempSHT21(sht.getTemperature());
   //localState->setHumSHT21(sht.getHumidity());
-  float tempSHT21 = float(random(28, 30));
-  float humSHT21 = float(random(60, 80));
+  float tempSHT21 =random(100, 2000) / 100.0;
+  float humSHT21 = random(100, 2000) / 100.0;
   localState->setTempSHT21(tempSHT21);
   localState->setHumSHT21(humSHT21);
 }
 
 void getDs18b20() {
-  float ds18b20 = float(random(28, 30));
+  float ds18b20 = random(100, 2000) / 100.0;
   localState->setDs18b20(ds18b20);
 }

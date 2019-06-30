@@ -31,20 +31,20 @@ class Node01State {
     }
 
     String getState() {
-      StaticJsonDocument<128> doc;
+      StaticJsonBuffer<128> jsonBuffer;
+      JsonObject& doc = jsonBuffer.createObject();
       String s = "";
       doc["tempSHT21"] = this->tempSHT21;
       doc["humSHT21"] =  this->humSHT21;
       doc["ds18b20"] = this->ds18b20;
       doc["nodeID"] = this->nodeID;
-      serializeJson(doc, s);
+      doc.printTo(s);
       return s;
     }
 
     void updateState(String loraBuffer) {
-      StaticJsonDocument<128> doc;
-      deserializeJson(doc, loraBuffer);
-
+      DynamicJsonBuffer jb;
+      JsonObject& doc  = jb.parseObject(loraBuffer);
       if (doc.containsKey("nodeID")) {
         if (doc["nodeID"] == "node01") {
           this->tempSHT21 = doc["tempSHT21"];
