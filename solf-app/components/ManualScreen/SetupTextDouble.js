@@ -8,19 +8,19 @@ import {
 
 export default class SetupTextDouble extends React.Component {
   render() {
-    let { value } = this.props;
+    let { title, value, type } = this.props;
     return (
       <View style={styles.container}>
         <View style={styles.flexOne}>
           <Text style={styles.alignCenter}>
-            Set time spray
+            {title}
           </Text>
         </View>
         <View style={{ flex: 2, flexDirection: 'column' }}>
           <View style={{ flexDirection: 'row' }}>
             <TextInput
               style={styles.textBoxStyle}
-              onChangeText={(text) => this.props.onChangeText({ type: 'on', value: text })}
+              onChangeText={(text) => this.props.onChangeText({ type: `${type}on`, value: text })}
               value={value.on}
               placeholder="on"
             />
@@ -31,7 +31,7 @@ export default class SetupTextDouble extends React.Component {
           <View style={{ flexDirection: 'row' }}>
             <TextInput
               style={styles.textBoxStyle}
-              onChangeText={(text) => this.props.onChangeText({ type: 'off', value: text })}
+              onChangeText={(text) => this.props.onChangeText({ type: `${type}off`, value: text })}
               value={value.off}
               placeholder="off"
             />

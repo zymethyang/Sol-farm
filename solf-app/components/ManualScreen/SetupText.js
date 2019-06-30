@@ -3,7 +3,8 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput
+  TextInput,
+  Slider
 } from 'react-native';
 
 export default class SetupText extends React.Component {
@@ -17,21 +18,7 @@ export default class SetupText extends React.Component {
           </Text>
         </View>
         <View style={{ flex: 2, flexDirection: 'row' }}>
-          <TextInput
-            style={styles.textBoxStyle}
-            onChangeText={(text) => this.props.onChangeText({ type: `${type}_min`, value: text })}
-            value={`${value.min}`}
-            placeholder="min"
-          />
-          <View style={styles.arrowWrapStyle}>
-            <Text style={styles.alignCenter}>→</Text>
-          </View>
-          <TextInput
-            style={styles.textBoxStyle}
-            onChangeText={(text) => this.props.onChangeText({ type: `${type}_max`, value: text })}
-            value={`${value.max}`}
-            placeholder="max"
-          />
+          <Slider onSlidingComplete={event=>this.props.onSlidingComplete({event:event,type:type})} value={value} style={{ width: 200, height: 40 }} minimumTrackTintColor="#ef5350" maximumTrackTintColor="#9e9e9e" minimumValue={0} maximumValue={1000} thumbTintColor="transparent" />
         </View>
       </View>
     );

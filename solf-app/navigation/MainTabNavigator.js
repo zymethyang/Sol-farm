@@ -3,7 +3,7 @@ import { createStackNavigator, createBottomTabNavigator } from 'react-navigation
 
 import TabBarIcon from '../components/TabBarIcon';
 import InfoScreen from '../screens/InfoScreen';
-import AutoScreen from '../screens/AutoScreen';
+//import AutoScreen from '../screens/AutoScreen';
 import ManualScreen from '../screens/ManualScreen';
 
 import ListTrees from '../screens/ListTrees';
@@ -27,7 +27,7 @@ InfoStack.navigationOptions = {
     activeTintColor: '#aaa',
   }
 };
-
+/*
 const AutoStack = createStackNavigator({
   AutoScreen: AutoScreen,
   ListTrees: ListTrees
@@ -48,7 +48,7 @@ AutoStack.navigationOptions = {
     activeTintColor: '#aaa',
   }
 };
-
+*/
 const ManualStack = createStackNavigator({
   ManualScreen: ManualScreen,
 });
@@ -71,6 +71,6 @@ ManualStack.navigationOptions = {
 
 export default createBottomTabNavigator({
   InfoStack,
-  AutoStack,
+ // AutoStack,
   ManualStack,
 });

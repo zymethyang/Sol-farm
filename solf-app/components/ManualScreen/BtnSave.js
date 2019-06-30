@@ -24,10 +24,9 @@ export default class BtnSave extends React.Component {
 
 const styles = StyleSheet.create({
   wrapFooterStyle: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: '100%'
+    marginTop: 20,
+    width: '100%',
+    marginBottom: 100
   },
   btnStyle: {
     marginLeft: 20,

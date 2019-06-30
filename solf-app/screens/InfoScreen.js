@@ -6,8 +6,7 @@ import {
 
 import { Message } from 'react-native-paho-mqtt';
 import InfoBox from '../components/InfoScreen/InfoBox';
-import SwitchUI from '../components/InfoScreen/SwitchUI';
-import Footer from '../components/Footer';
+
 
 import Amplify, { PubSub } from 'aws-amplify';
 import { AWSIoTProvider } from '@aws-amplify/pubsub/lib/Providers';
@@ -32,22 +31,55 @@ export default class InfoScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      ph: 0,
-      ec: 0,
-      temp: 0,
-      water: 0,
-      spray: false,
-      mixer: false
+      node01: {
+        tempSHT21: 0,
+        humSHT21: 0,
+        ds18b20: 0,
+        nodeID: "node01"
+      },
+      node02: {
+        tempSHT21: 0,
+        humSHT21: 0,
+        dacValue: 0,
+        nodeID: "node02"
+      },
+      esp32: {
+        nodeID: "esp32",
+        pressure: false,
+        esc: 0,
+        relayOne: false,
+        relayTwo: false,
+        relayThree: false
+      }
+    }
+  }
+
+  processingFeedbackValue = (data) => {
+    switch (data.nodeID) {
+      case 'node01':
+        this.setState({
+          node01: data
+        })
+        break;
+      case 'node02':
+        this.setState({
+          node02: data
+        })
+        break;
+      case 'esp32':
+        this.setState({
+          esp32: data
+        })
+        break;
     }
   }
 
   async componentDidMount() {
     PubSub.subscribe('sol-farm/feedback').subscribe({
-      next: data => console.log('Message received', data.value),
+      next: data => this.processingFeedbackValue(data.value),
       error: error => console.error(error),
       close: () => console.log('Done'),
     });
-    await PubSub.publish('sol-farm/control', { msg: 'Hello to all subscribers!' });
   }
 
   controlState = ({ type, value }) => {
@@ -60,19 +92,16 @@ export default class InfoScreen extends React.Component {
   }
 
   render() {
-    let { ph, ec, temp, water, spray, mixer } = this.state;
+    let { node01, node02, esp32 } = this.state;
     return (
       <View style={styles.container}>
-        <InfoBox title={"(1) Sht21 temp: "} value={ph} props="" />
-        <InfoBox title={"(1) Sht21 hum: "} value={ec} props="mS/cm" />
-        <InfoBox title={"(1) Ds1820b temp: "} value={temp} props="°C" />
-        <InfoBox title={"(2) Sht21 temp: "} value={water} props="" />
-        <InfoBox title={"(2) Sht21 hum: "} value={water} props="" />
-        <InfoBox title={"(2) Fan: "} value={water} props="" />
-        <View style={styles.rowsAlign}>
-          <SwitchUI title={"Spray"} value={spray} onValueChange={value => this.controlState({ type: 'spray', value: value })} />
-          <SwitchUI title={"Mixer"} value={mixer} onValueChange={value => this.controlState({ type: 'mixer', value: value })} />
-        </View>
+        <InfoBox title={"(1) Sht21 temp: "} value={node01.tempSHT21} props="°C" />
+        <InfoBox title={"(1) Sht21 hum: "} value={node01.humSHT21} props="%" />
+        <InfoBox title={"(1) Ds1820b temp: "} value={node01.ds18b20} props="°C" />
+        <InfoBox title={"(2) Sht21 temp: "} value={node02.tempSHT21} props="°C" />
+        <InfoBox title={"(2) Sht21 hum: "} value={node02.humSHT21} props="%" />
+        <InfoBox title={"(2) Fan: "} value={node02.dacValue} props="" />
+        <InfoBox title={"(ESP) Fan: "} value={esp32.esc} props="" />
       </View>
     );
   }
