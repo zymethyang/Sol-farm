@@ -4,6 +4,11 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <SoftwareSerial.h>
+#include <ThreadController.h>
+#include <ArduinoJson.h>
+#include "LocalState.cpp"
+#include "Node01State.cpp"
+#include "Node02State.cpp"
 
 const char* ssid = "Temp1";
 const char* password = "qwertyuiop";
@@ -12,9 +17,17 @@ const char* subcribe_topic = "sol-farm/control";
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
-SoftwareSerial serialSW(3, 4);
+SoftwareSerial serialSW(D3, D4);
+ThreadController controller = ThreadController();
+Thread publish_data_thread = Thread();
+//Thread check_mqtt_connect_thread = Thread();
+
+LocalState* localState = new LocalState();
+Node01State* node01State = new Node01State();
+Node02State* node02State = new Node02State();
 
 const char* AWS_endpoint = "a2184o3gtkvd1o-ats.iot.ap-southeast-1.amazonaws.com"; //MQTT broker ip
+
 
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
@@ -60,33 +73,11 @@ void setup_wifi() {
 }
 
 
-void reconnect() {
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    String clientId = "ESP8266Client-";
-    clientId += String(random(0xffff), HEX);
-    if (client.connect(clientId.c_str())) {
-      Serial.println("connected");
-      //client.publish("outTopic", "hello world");
-      client.subscribe(subcribe_topic);
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      char buf[256];
-      espClient.getLastSSLError(buf, 256);
-      Serial.print("WiFiClientSecure SSL error: ");
-      Serial.println(buf);
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
-}
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial);
-  serialSW.begin(115200);
+  serialSW.begin(9600);
   Serial.setDebugOutput(true);
   setup_wifi();
   delay(1000);
@@ -149,26 +140,79 @@ void setup() {
   else {
     Serial.println("ca failed");
   }
+ 
+  Serial.println("Push job to task queue");
+  publish_data_thread.onRun(sendMqttMessage);
+  publish_data_thread.setInterval(2000);
 
-  Serial.print("Heap: "); Serial.println(ESP.getFreeHeap());
+  //check_mqtt_connect_thread.onRun(checkMqttConnect);
+  //check_mqtt_connect_thread.setInterval(3000);
+
+  controller.add(&publish_data_thread);
+  //controller.add(&check_mqtt_connect_thread);
+
+  Serial.print("Heap: ");
+  Serial.println(ESP.getFreeHeap());
 }
 
 
-
-void loop() {
-  /*
-    if (!client.connected()) {
-    reconnect();
-    }
-    client.loop();
-  */
-  if (serialSW.available()) {
-    Serial.print("New Data");
+void sendMqttMessage () {
+  //char arrToSend[3] = {node01State->getState(), node02State->getState(), localState->getState()};
+  //========= NODE 1
+  String msgSend[3] = {node01State->getState(), node02State->getState(), localState->getState()};
+  for (int i = 0; i < 3; i++) {
+    converToSend(msgSend[i]);
+  }
+  //=========
+}
+void converToSend(String msgSend) {
+  char msg[128];
+  msgSend.toCharArray(msg, 128);
+  if (client.publish("sol-farm/feedback", msg) == 0) {
+    //Serial.println("Published Message");
+  }
+  else
+  {
+    //Serial.println("Publish failed");
   }
 }
 
-void readSerial() {
+void loop() {
+  checkMqttConnect();
+  controller.run();
+}
+
+
+
+void serialEvent() {
   if (serialSW.available()) {
-    Serial.print(serialSW.read());
+    String inputString = "";
+    while (serialSW.available()) {
+      char inChar = (char)serialSW.read();
+      inputString += inChar;
+    }
+    Serial.print(inputString);
+  }
+}
+
+void checkMqttConnect() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    if (client.connect(clientId.c_str())) {
+      Serial.println("connected");
+      client.subscribe(subcribe_topic);
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      char buf[256];
+      espClient.getLastSSLError(buf, 256);
+      Serial.print("WiFiClientSecure SSL error: ");
+      Serial.println(buf);
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
   }
 }

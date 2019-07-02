@@ -9,9 +9,9 @@ const int resetPin = 5;
 const int irqPin = 2;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial);
-  serialSW.begin(115200);
+  serialSW.begin(9600);
 
   LoRa.setPins(csPin, resetPin, irqPin);
   Serial.println("Setup Lora....");
