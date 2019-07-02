@@ -25,18 +25,28 @@ void setup() {
 }
 
 void loop() {
-  //Nothing here.
+  serialEvent();
 }
 
 
 void onReceive(int packetSize) {
-  char messageLora[packetSize + 1];
+  String messageLora = "";
   for (int i = 0; i < packetSize; i++) {
-    messageLora[i] = (char)LoRa.read();
+    messageLora += (char)LoRa.read();
   }
-  messageLora[packetSize] = '\0';
   serialSW.println(messageLora);
   Serial.println(messageLora);
+}
+
+void serialEvent() {
+  String str = "";
+  if (serialSW.available() > 0)
+  {
+    str = serialSW.readStringUntil('\n');
+  }
+  if (str != "") {
+    sendData(str);
+  }
 }
 
 void sendData(String anything) {

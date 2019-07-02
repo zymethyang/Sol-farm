@@ -111,26 +111,22 @@ void onReceive(int packetSize) {
 }
 
 void parseJSONRecived(char* messageLora) {
-  DynamicJsonBuffer jb;
-  JsonObject& doc  = jb.parseObject(messageLora);
-  if (doc.success()) {
-    if (doc.containsKey("nodeID")) {
-      String id = doc["nodeID"].as<String>();
-
-      if (id == "node01") {
-        Serial.println("processs 1");
-        node01State->setTempSHT21(doc["tempSHT21"].as<float>());
-        node01State->setHumSHT21(doc["humSHT21"].as<float>());
-        node01State->setDs18b20(doc["ds18b20"].as<float>());
-      }
-      if (id == "node02") {
-        Serial.println("processs 2");
-        node02State->setTempSHT21(doc["tempSHT21"].as<float>());
-        node02State->setHumSHT21(doc["humSHT21"].as<float>());
-        node02State->setDacValue(doc["dacValue"].as<int>());
-      }
+  StaticJsonDocument<128> doc;
+  if (doc.containsKey("nodeID")) {
+    String id = doc["nodeID"].as<String>();
+    if (id == "node01") {
+      Serial.println("processs 1");
+      node01State->setTempSHT21(doc["tempSHT21"].as<float>());
+      node01State->setHumSHT21(doc["humSHT21"].as<float>());
+      node01State->setDs18b20(doc["ds18b20"].as<float>());
     }
-  } else Serial.println("Parse JSON false");
+    if (id == "node02") {
+      Serial.println("processs 2");
+      node02State->setTempSHT21(doc["tempSHT21"].as<float>());
+      node02State->setHumSHT21(doc["humSHT21"].as<float>());
+      node02State->setDacValue(doc["dacValue"].as<int>());
+    }
+  }
 }
 
 void onReceiveMqtt (char *topicName, int payloadLen, char *payLoad)
@@ -192,6 +188,7 @@ void converToSend(String msgSend) {
     //Serial.println("Publish failed");
   }
 }
+
 void sendDataLora(String anything) {
   while (LoRa.beginPacket() == 0) {
     Serial.print("waiting for radio ready... ");
