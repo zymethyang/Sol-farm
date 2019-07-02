@@ -1,13 +1,14 @@
 #include <SPI.h>
 #include <LoRa.h>
 #include <ThreadController.h>
-#include "ESP32State.cpp"
+#include <SHT21.h>
 #include "LocalState.cpp"
 
 ThreadController controller = ThreadController();
 Thread sync_data_thread = Thread();
 Thread get_sht21_thread = Thread();
 Thread get_ds1820b_thread = Thread();
+SHT21 sht; 
 
 LocalState* localState = new LocalState();
 
@@ -16,6 +17,7 @@ const int resetPin = 5;
 const int irqPin = 2;
 
 void setup() {
+  Wire.begin();
   Serial.begin(115200);
   while (!Serial);
 
@@ -27,11 +29,11 @@ void setup() {
   Serial.println("Complete setup lora");
 
   sync_data_thread.onRun(syncData);
-  sync_data_thread.setInterval(2000);
+  sync_data_thread.setInterval(3000);
   get_sht21_thread.onRun(getSHT21);
-  get_sht21_thread.setInterval(1800);
+  get_sht21_thread.setInterval(2800);
   get_ds1820b_thread.onRun(getDs18b20);
-  get_ds1820b_thread.setInterval(1800);
+  get_ds1820b_thread.setInterval(2800);
 
   controller.add(&sync_data_thread);
   controller.add(&get_sht21_thread);
@@ -60,6 +62,8 @@ void sendData(String anything) {
 }
 
 void getSHT21() {
+  //float temp = sht.getTemperature();   
+  //float humidity = sht.getHumidity(); 
   //localState->setTempSHT21(sht.getTemperature());
   //localState->setHumSHT21(sht.getHumidity());
   float tempSHT21 =random(100, 2000) / 100.0;

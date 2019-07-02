@@ -31,15 +31,14 @@ class LocalState {
     }
 
     String getState() {
-      StaticJsonBuffer<128> jsonBuffer;
-      JsonObject& doc = jsonBuffer.createObject();
+      StaticJsonDocument<128> doc;
       doc["tempSHT21"] = this->tempSHT21;
       doc["humSHT21"] =  this->humSHT21;
       doc["ds18b20"] = this->ds18b20;
       doc["nodeID"] = this->nodeID;
       String s = "";
-      doc.printTo(s);
-      //serializeJson(doc, s);
+      //doc.printTo(s);
+      serializeJson(doc, s);
       return s;
     }
 };

@@ -1,6 +1,6 @@
 #include <SPI.h>
 #include <LoRa.h>
-#include <WiFi.h>
+#include <ESP8266WiFi.h>
 #include <AWS_IOT.h>
 #include <ThreadController.h>
 #include <ArduinoJson.h>
@@ -82,7 +82,7 @@ void setup() {
   Serial.println("Push job to task queue");
 
   publish_data_thread.onRun(sendMqttMessage);
-  publish_data_thread.setInterval(2000);
+  publish_data_thread.setInterval(3000);
   controller.add(&publish_data_thread);
   LoRa.onReceive(onReceive);
   LoRa.receive();
@@ -104,7 +104,7 @@ void onReceive(int packetSize) {
   }
   messageLora[packetSize] = '\0';
   msgToSave[packetSize] = '\0';
-  Serial.println(messageLora);
+  //Serial.println(messageLora);
   parseJSONRecived(messageLora);
   //  node02State->updateState(messageLora,);
   //  node01State->updateState(messageLora);
@@ -122,19 +122,12 @@ void parseJSONRecived(char* messageLora) {
         node01State->setTempSHT21(doc["tempSHT21"].as<float>());
         node01State->setHumSHT21(doc["humSHT21"].as<float>());
         node01State->setDs18b20(doc["ds18b20"].as<float>());
-        //        node01State->buffString = messageLora;
-        Serial.println(doc["tempSHT21"].as<float>());
-        Serial.println(doc["humSHT21"].as<float>());
-        Serial.println(doc["ds18b20"].as<float>());
       }
       if (id == "node02") {
         Serial.println("processs 2");
         node02State->setTempSHT21(doc["tempSHT21"].as<float>());
         node02State->setHumSHT21(doc["humSHT21"].as<float>());
-        node02State->setDacValue(doc["ds18b20"].as<int>());
-        Serial.println(doc["tempSHT21"].as<float>());
-        Serial.println(doc["humSHT21"].as<float>());
-        Serial.println(doc["dacValue"].as<int>());
+        node02State->setDacValue(doc["dacValue"].as<int>());
       }
     }
   } else Serial.println("Parse JSON false");
@@ -144,19 +137,38 @@ void onReceiveMqtt (char *topicName, int payloadLen, char *payLoad)
 {
   // Code nhan dieu khien tu mqtt
   char message[payloadLen + 1];
+  String loraSend = "";
   for (int i = 0; i < payloadLen; i++) {
     message[i] = (char)payLoad[i];
   }
   message[payloadLen] = '\0';
-  Serial.println(message);
   DynamicJsonBuffer jb;
   JsonObject& doc  = jb.parseObject(message);
+  String nodeID = doc["nodeID"].as<String>();
+
   if (doc.success()) {
-    if (doc.containsKey("message")) {
-      Serial.println("Đã parse thành công");
+    if (nodeID == "esp32") {
+      if (doc.containsKey("esc")) {
+        int esc = doc["esc"].as<int>();
+        localState->setESC(esc);
+      }
+      if (doc.containsKey("relayOne")) {
+        int relayOne = doc["relayOne"].as<bool>();
+        localState->setRelayOne(relayOne);
+      }
+      if (doc.containsKey("relayTwo")) {
+        int relayTwo = doc["relayTwo"].as<bool>();
+        localState->setRelayTwo(relayTwo);
+      }
+      if (doc.containsKey("relayThree")) {
+        int relayThree = doc["relayThree"].as<bool>();
+        localState->setRelayThree(relayThree);
+      }
+    } else {
+      doc.printTo(loraSend);
+      sendDataLora(loraSend);
     }
   } else Serial.println("Parse JSON false");
-
 }
 
 void sendMqttMessage () {
@@ -173,11 +185,11 @@ void converToSend(String msgSend) {
   msgSend.toCharArray(msg, 128);
   if (aws.publish("sol-farm/feedback", msg) == 0)
   {
-    Serial.println("Published Message");
+    //Serial.println("Published Message");
   }
   else
   {
-    Serial.println("Publish failed");
+    //Serial.println("Publish failed");
   }
 }
 void sendDataLora(String anything) {
@@ -188,6 +200,6 @@ void sendDataLora(String anything) {
   // send in async / non-blocking mode
   LoRa.beginPacket();
   LoRa.print(anything);
-  LoRa.endPacket(true); //true is async mode
-
+  LoRa.endPacket(); //true is async mode
+  LoRa.receive();
 }
