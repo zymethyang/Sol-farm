@@ -3,27 +3,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-
-import { Message } from 'react-native-paho-mqtt';
 import InfoBox from '../components/InfoScreen/InfoBox';
+import { PubSub } from 'aws-amplify';
 
-
-import Amplify, { PubSub } from 'aws-amplify';
-import { AWSIoTProvider } from '@aws-amplify/pubsub/lib/Providers';
-
-Amplify.addPluggable(new AWSIoTProvider({
-  aws_pubsub_region: 'ap-southeast-1',
-  aws_pubsub_endpoint: 'wss://a2184o3gtkvd1o-ats.iot.ap-southeast-1.amazonaws.com/mqtt',
-}));
-
-Amplify.configure({
-  Auth: {
-    identityPoolId: 'ap-southeast-1:0c7bb479-7740-49e8-bad9-666bbc18d49c',
-    region: 'ap-southeast-1',
-  }
-})
-
-export default class InfoScreen extends React.Component {
+class InfoScreen extends React.Component {
   static navigationOptions = {
     header: null,
   };
@@ -55,6 +38,7 @@ export default class InfoScreen extends React.Component {
   }
 
   processingFeedbackValue = (data) => {
+    console.log(data);
     switch (data.nodeID) {
       case 'node01':
         this.setState({
@@ -75,21 +59,13 @@ export default class InfoScreen extends React.Component {
   }
 
   async componentDidMount() {
-    PubSub.subscribe('sol-farm/feedback').subscribe({
+    PubSub.subscribe('sol-farm/feedback', { provider: 'AWSIoTProvider' }).subscribe({
       next: data => this.processingFeedbackValue(data.value),
       error: error => console.error(error),
       close: () => console.log('Done'),
     });
   }
 
-  controlState = ({ type, value }) => {
-    const state = { [type]: value };
-    this.setState(state);
-    const messageBuffer = JSON.stringify(state);
-    const message = new Message(messageBuffer);
-    message.destinationName = 'FWpfOR6wyKZIoYj';
-    client.send(message);
-  }
 
   render() {
     let { node01, node02, esp32 } = this.state;
@@ -117,3 +93,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row'
   }
 });
+
+export default InfoScreen;

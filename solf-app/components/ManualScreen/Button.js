@@ -5,17 +5,17 @@ import {
 } from 'react-native';
 import { Button, Text } from 'native-base';
 
-
-export default class BtnSave extends React.Component {
+export default class Btn extends React.Component {
   static navigationOptions = {
     header: null,
   };
 
   render() {
+    let { title } = this.props;
     return (
       <View style={styles.wrapFooterStyle}>
         <Button full style={styles.btnStyle} onPress={() => this.props.onPress()}>
-          <Text style={styles.btnTextStyle}>Press here!</Text>
+          <Text style={styles.btnTextStyle}>{title}</Text>
         </Button>
       </View>
     );
@@ -26,7 +26,6 @@ const styles = StyleSheet.create({
   wrapFooterStyle: {
     marginTop: 20,
     width: '100%',
-    marginBottom: 100
   },
   btnStyle: {
     marginLeft: 20,

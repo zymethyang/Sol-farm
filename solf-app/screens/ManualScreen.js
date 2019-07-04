@@ -3,30 +3,15 @@ import {
   StyleSheet,
   ScrollView
 } from 'react-native';
-
+import { View } from 'native-base';
 
 import SetupText from '../components/ManualScreen/SetupText';
 import SetupTextDouble from '../components/ManualScreen/SetupTextDouble';
-import BtnSave from '../components/ManualScreen/BtnSave';
+import Button from '../components/ManualScreen/Button';
 
+import { PubSub } from 'aws-amplify';
 
-import Amplify, { PubSub } from 'aws-amplify';
-import { AWSIoTProvider } from '@aws-amplify/pubsub/lib/Providers';
-
-Amplify.addPluggable(new AWSIoTProvider({
-  aws_pubsub_region: 'ap-southeast-1',
-  aws_pubsub_endpoint: 'wss://a2184o3gtkvd1o-ats.iot.ap-southeast-1.amazonaws.com/mqtt',
-}));
-
-Amplify.configure({
-  Auth: {
-    identityPoolId: 'ap-southeast-1:0c7bb479-7740-49e8-bad9-666bbc18d49c',
-    region: 'ap-southeast-1',
-  }
-})
-
-
-export default class ManualScreen extends React.Component {
+class ManualScreen extends React.Component {
   static navigationOptions = {
     header: null,
   };
@@ -43,15 +28,31 @@ export default class ManualScreen extends React.Component {
     }
   }
 
-  sendCloud = ({ k1on, k1off, k2on, k2off, k3on, k3off }) => {
+  sendCircleCloud = ({ k1on, k1off, k2on, k2off, k3on, k3off }) => {
     const dataBuffer = {
       nodeID: 'esp32',
-      k1on: parseInt(k1on),
-      k1off: parseInt(k1off),
-      k2on: parseInt(k2on),
-      k2off: parseInt(k2off),
-      k3on: parseInt(k3on),
-      k3off: parseInt(k3off)
+      k1on: parseInt(k1on) || 0,
+      k1off: parseInt(k1off) || 0,
+      k2on: parseInt(k2on) || 0,
+      k2off: parseInt(k2off) || 0,
+      k3on: parseInt(k3on) || 0,
+      k3off: parseInt(k3off) || 0
+    };
+    PubSub.publish('sol-farm/control', dataBuffer);
+  }
+
+  stopFan2 = () => {
+    const dataBuffer = {
+      nodeID: 'node02',
+      dacValue: 0
+    };
+    PubSub.publish('sol-farm/control', dataBuffer);
+  }
+
+  stopFanE = () => {
+    const dataBuffer = {
+      nodeID: 'esp32',
+      esc: 0
     };
     PubSub.publish('sol-farm/control', dataBuffer);
   }
@@ -62,16 +63,14 @@ export default class ManualScreen extends React.Component {
       <ScrollView style={styles.container}>
         <SetupText title="(2) fan" type="2" value={100} onSlidingComplete={({ event }) => PubSub.publish('sol-farm/control', { dacValue: parseInt(event), nodeID: 'node02' })} />
         <SetupText title="(e) fan" type="e" value={200} onSlidingComplete={({ event }) => PubSub.publish('sol-farm/control', { esc: parseInt(event), nodeID: 'esp32' })} />
+        <Button title="Stop (2) fan" onPress={() => this.stopFan2()} />
+        <Button title="Stop (e) fan" onPress={() => this.stopFanE()} />
         <SetupTextDouble title="K1" type="k1" value={{ on: k1on, off: k1off }} onChangeText={({ type, value }) => this.setState({ [type]: value })} />
         <SetupTextDouble title="K2" type="k2" value={{ on: k2on, off: k2off }} onChangeText={({ type, value }) => this.setState({ [type]: value })} />
         <SetupTextDouble title="K3" type="k3" value={{ on: k3on, off: k3off }} onChangeText={({ type, value }) => this.setState({ [type]: value })} />
-        {/* 
-        <SetupSwitch value={spray_outside} onValueChange={({ type, value }) => this.setState({ [type]: value })} />
-        <View style={styles.wrapStyle}>
-          <Text style={styles.textStyle}>Do you want to run?</Text>
+        <View style={{ marginBottom: 80 }}>
+          <Button title="Save" onPress={() => this.sendCircleCloud(this.state)} />
         </View>
-        */}
-        <BtnSave onPress={() => this.sendCloud(this.state)} />
       </ScrollView>
     );
   }
@@ -96,3 +95,5 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   }
 });
+
+export default ManualScreen;

@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput,
   Slider
 } from 'react-native';
 
@@ -18,7 +17,7 @@ export default class SetupText extends React.Component {
           </Text>
         </View>
         <View style={{ flex: 2, flexDirection: 'row' }}>
-          <Slider onSlidingComplete={event=>this.props.onSlidingComplete({event:event,type:type})} value={value} style={{ width: 200, height: 40 }} minimumTrackTintColor="#ef5350" maximumTrackTintColor="#9e9e9e" minimumValue={0} maximumValue={1000} thumbTintColor="transparent" />
+          <Slider onSlidingComplete={(event) => this.props.onSlidingComplete({ event: event, type: type })} value={value} style={{ width: 200, height: 40 }} minimumTrackTintColor="#ef5350" maximumTrackTintColor="#9e9e9e" minimumValue={1900} maximumValue={2500} thumbTintColor="transparent" />
         </View>
       </View>
     );
